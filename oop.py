@@ -26,9 +26,11 @@ BLOCK_SIZE = 25
 MAX_BLOCKS = 10
 
 class Ball(pygame.Rect):
+    def __init_subclass__(cls):
+        super().__init_subclass__()
+    
     def __init__(self):
-        super().__init__()
-        self.dirX = 1
+        self.dirx = 1
         self.dirY = 1
 
     def padCollision(self, paddle):
@@ -40,8 +42,21 @@ class Ball(pygame.Rect):
         if padCollision:
             self.dirY *= -1
 
-        
 
+class Paddle(pygame.Rect):
+    def __init_subclass__(cls):
+        super().__init_subclass__()
+
+class Block(pygame.Rect):
+    def __init_subclass__(cls):
+        super().__init_subclass__()
+    
+    def blockCollision(self, blocks, ball, score):
+        blockCollision = pygame.Rect.colliderect(self, ball)
+        if blockCollision:
+            score += 1
+            ball.dirY *= -1
+            blocks.remove(self)
 
 #Draw on Display
 def draw(player, elapsedTime, ball, blocks, stage, score):
