@@ -30,8 +30,13 @@ class Ball(pygame.Rect):
         super().__init_subclass__()
     
     def __init__(self):
-        self.dirx = 1
+        self.dirX = 1
         self.dirY = 1
+        self.velocity = BALL_VEL
+
+    def blockMovement(self):
+        self.y += self.velocity * self.dirY
+        self.x += self.velocity * self.dirX
 
     def padCollision(self, paddle):
         padCollision = pygame.Rect.colliderect(self, paddle)
@@ -46,6 +51,9 @@ class Ball(pygame.Rect):
 class Paddle(pygame.Rect):
     def __init_subclass__(cls):
         super().__init_subclass__()
+    
+    def __init__(self):
+        self.velocity = PLAYER_VEL
 
 class Block(pygame.Rect):
     def __init_subclass__(cls):
@@ -79,6 +87,13 @@ def draw(player, elapsedTime, ball, blocks, stage, score):
         pygame.draw.rect(WIN, "brown", block)
 
     pygame.display.update()
+
+def controls(paddle):
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_LEFT] and paddle.x - paddle.velocity >= 0:
+        paddle.x -= PLAYER_VEL
+    if keys[pygame.K_RIGHT] and paddle.x + paddle.width + paddle.velocity <= WIDTH:
+        paddle.x += PLAYER_VEL
 
 #Main Game
 def main():
