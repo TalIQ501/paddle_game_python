@@ -39,7 +39,7 @@ class Ball():
     
     def check_collision(self, collider):
         if self.rect.colliderect(collider):
-            self.onCollison();
+            self.on_collison()
 
     def on_collision(self, paddle):
         padCollision = pygame.Rect.colliderect(self.rect, paddle.rect)
@@ -56,11 +56,11 @@ class Paddle():
         self.rect = pygame.Rect(x, y, width, height)
         self.velocity = PLAYER_VEL
 
-     # Move the paddle up
+     # Move the paddle left
     def move_left(self):
         self.rect.x -= self.velocity
     
-    # Move the paddle down
+    # Move the paddle right
     def move_right(self):
         self.rect.x += self.velocity
 
