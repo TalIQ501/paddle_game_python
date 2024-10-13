@@ -31,14 +31,19 @@ class Ball():
         self.dirX = 1
         self.dirY = 1
         self.velocity = BALL_VEL
+        self.radius = BALL_RADIUS
 
-    def blockMovement(self):
-        self.y += self.velocity * self.dirY
-        self.x += self.velocity * self.dirX
+    def ball_movement(self):
+        self.rect.y += self.velocity * self.dirY
+        self.rect.x += self.velocity * self.dirX
+    
+    def check_collision(self, collider):
+        if self.rect.colliderect(collider):
+            self.onCollison();
 
-    def padCollision(self, paddle):
+    def on_collision(self, paddle):
         padCollision = pygame.Rect.colliderect(self.rect, paddle.rect)
-        if self.x + (BALL_RADIUS*2) > WIDTH or self.x < 0:
+        if self.rect.x + (self.radius*2) > WIDTH or self.rect.x < 0:
             self.dirX *= -1
         if self.y < 0:
             self.dirY *= -1
@@ -52,23 +57,24 @@ class Paddle():
         self.velocity = PLAYER_VEL
 
      # Move the paddle up
-    def move_up(self):
-        self.rect.y -= self.velocity
+    def move_left(self):
+        self.rect.x -= self.velocity
     
     # Move the paddle down
-    def move_down(self):
-        self.rect.y += self.velocity
+    def move_right(self):
+        self.rect.x += self.velocity
 
 class Block():
     def __init__(self, x, y, width, height):
         self.rect = pygame.Rect(x, y, width, height)
-    
-    def blockCollision(self, blocks, ball, score):
-        blockCollision = pygame.Rect.colliderect(self, ball)
-        if blockCollision:
-            score += 1
-            ball.dirY *= -1
-            blocks.remove(self)
+
+    def check_collision(self, collider):
+        if self.rect.colliderect(collider):
+            self.block_collision()
+
+    def block_collision(self, blocks, score):
+        score += 1
+        blocks.remove(self)
 
 #Draw on Display
 def draw(player, elapsedTime, ball, blocks, stage, score):
@@ -153,7 +159,7 @@ def main():
             for _ in range(stageBlocks - len(blocks)):
                 blockX = random.randint(5, int(WIDTH - BLOCK_SIZE - 5))
                 blockY = random.randint(5, int(3*HEIGHT/5))
-                block = pygame.Rect(blockX, blockY, BLOCK_SIZE, BLOCK_SIZE)
+                block = Block(blockX, blockY, BLOCK_SIZE, BLOCK_SIZE)
                 blocks.append(block)
         
         #Adding a New Stage
