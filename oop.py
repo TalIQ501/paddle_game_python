@@ -25,11 +25,9 @@ BALL_VEL = 5
 BLOCK_SIZE = 25
 MAX_BLOCKS = 10
 
-class Ball(pygame.Rect):
-    def __init_subclass__(cls):
-        super().__init_subclass__()
-    
-    def __init__(self):
+class Ball():
+    def __init__(self, x, y, width, height):
+        self.rect = pygame.Rect(x, y, width, height)
         self.dirX = 1
         self.dirY = 1
         self.velocity = BALL_VEL
@@ -39,7 +37,7 @@ class Ball(pygame.Rect):
         self.x += self.velocity * self.dirX
 
     def padCollision(self, paddle):
-        padCollision = pygame.Rect.colliderect(self, paddle)
+        padCollision = pygame.Rect.colliderect(self.rect, paddle.rect)
         if self.x + (BALL_RADIUS*2) > WIDTH or self.x < 0:
             self.dirX *= -1
         if self.y < 0:
@@ -48,16 +46,22 @@ class Ball(pygame.Rect):
             self.dirY *= -1
 
 
-class Paddle(pygame.Rect):
-    def __init_subclass__(cls):
-        super().__init_subclass__()
-    
-    def __init__(self):
+class Paddle():
+    def __init__(self, x, y, width, height):
+        self.rect = pygame.Rect(x, y, width, height)
         self.velocity = PLAYER_VEL
 
-class Block(pygame.Rect):
-    def __init_subclass__(cls):
-        super().__init_subclass__()
+     # Move the paddle up
+    def move_up(self):
+        self.rect.y -= self.velocity
+    
+    # Move the paddle down
+    def move_down(self):
+        self.rect.y += self.velocity
+
+class Block():
+    def __init__(self, x, y, width, height):
+        self.rect = pygame.Rect(x, y, width, height)
     
     def blockCollision(self, blocks, ball, score):
         blockCollision = pygame.Rect.colliderect(self, ball)
@@ -100,8 +104,8 @@ def main():
     run = True
 
     #Create Player
-    paddle = pygame.Rect(200, HEIGHT - PLAYER_HEIGHT, PLAYER_WIDTH, PLAYER_HEIGHT)
-    ball = pygame.Rect(0, 0, BALL_RADIUS*2, BALL_RADIUS*2)
+    paddle = Paddle(200, HEIGHT - PLAYER_HEIGHT, PLAYER_WIDTH, PLAYER_HEIGHT)
+    ball = Ball(0, 0, BALL_RADIUS*2, BALL_RADIUS*2)
     ballVelocity = BALL_VEL
 
     #Initial Direction of Ball Movement
