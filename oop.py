@@ -27,27 +27,28 @@ MAX_BLOCKS = 10
 
 class Ball():
     def __init__(self, x, y, width, height):
-        self.rect = pygame.Rect(x, y, width, height)
+        self.rect = pygame.Rect(x, y, width, height) #Associate a Rect object with Ball
+        #Default Specifications for Movement Direction, Velocity and Radius
         self.dirX = 1
         self.dirY = 1
         self.velocity = BALL_VEL
         self.radius = BALL_RADIUS
 
+    #Directions
     def ball_movement(self):
         self.rect.y += self.velocity * self.dirY
         self.rect.x += self.velocity * self.dirX
-    
-    def check_collision(self, collider):
-        if self.rect.colliderect(collider):
-            self.on_collison()
 
-    def on_collision(self, paddle):
-        padCollision = pygame.Rect.colliderect(self.rect, paddle.rect)
+    #Check Collision with Paddle or Block
+    def check_object_collision(self, collider):
+        if self.rect.colliderect(collider):
+            self.dirY *= -1
+
+    #Collision with Wall
+    def wall_collision(self):
         if self.rect.x + (self.radius*2) > WIDTH or self.rect.x < 0:
             self.dirX *= -1
-        if self.y < 0:
-            self.dirY *= -1
-        if padCollision:
+        if self.rect.y < 0:
             self.dirY *= -1
 
 
@@ -56,7 +57,7 @@ class Paddle():
         self.rect = pygame.Rect(x, y, width, height)
         self.velocity = PLAYER_VEL
 
-     # Move the paddle left
+    # Move the paddle left
     def move_left(self):
         self.rect.x -= self.velocity
     
@@ -67,17 +68,16 @@ class Paddle():
 class Block():
     def __init__(self, x, y, width, height):
         self.rect = pygame.Rect(x, y, width, height)
+        self.health = 1
 
-    def check_collision(self, collider):
+    def check_collision(self, collider, blocks: list, score: int):
         if self.rect.colliderect(collider):
-            self.block_collision()
-
-    def block_collision(self, blocks, score):
-        score += 1
-        blocks.remove(self)
+            score += 1
+            blocks.remove(self)
+        
 
 #Draw on Display
-def draw(player, elapsedTime, ball, blocks, stage, score):
+def draw(player: Paddle, elapsedTime, ball: Ball, blocks: list, stage: int, score: int):
     WIN.fill("sky blue")
 
     timeText = FONT.render(f"Time: {round(elapsedTime)}s", 1, "black")
@@ -89,21 +89,27 @@ def draw(player, elapsedTime, ball, blocks, stage, score):
     scoreText = FONT.render(f"Score: {score}", 1, "black")
     WIN.blit(scoreText, (WIDTH - scoreText.get_width() - 10, stageText.get_height() + 10))
 
-    pygame.draw.rect(WIN, "blue", player)
+    pygame.draw.rect(WIN, "blue", player.rect)
 
-    pygame.draw.rect(WIN, "red", ball)
+    pygame.draw.rect(WIN, "red", ball.rect)
 
     for block in blocks:
         pygame.draw.rect(WIN, "brown", block)
 
     pygame.display.update()
 
-def controls(paddle):
+def controls(paddle: Paddle):
     keys = pygame.key.get_pressed()
-    if keys[pygame.K_LEFT] and paddle.x - paddle.velocity >= 0:
-        paddle.x -= PLAYER_VEL
-    if keys[pygame.K_RIGHT] and paddle.x + paddle.width + paddle.velocity <= WIDTH:
-        paddle.x += PLAYER_VEL
+    if keys[pygame.K_LEFT] and paddle.rect.x - paddle.velocity >= 0:
+        paddle.rect.x -= paddle.velocity
+    if keys[pygame.K_RIGHT] and paddle.rect.x + paddle.rect.width + paddle.velocity <= WIDTH:
+        paddle.rect.x += paddle.velocity
+
+def lose(msg):
+    lostText = FONT.render("You lost! Due to: \n" + msg, 1, "black")
+    WIN.blit(lostText, (WIDTH/2 - lostText.get_width()/2, HEIGHT/2 - lostText.get_width()/2))
+    pygame.display.update()
+    pygame.time.delay(4000)
 
 #Main Game
 def main():
@@ -112,11 +118,11 @@ def main():
     #Create Player
     paddle = Paddle(200, HEIGHT - PLAYER_HEIGHT, PLAYER_WIDTH, PLAYER_HEIGHT)
     ball = Ball(0, 0, BALL_RADIUS*2, BALL_RADIUS*2)
-    ballVelocity = BALL_VEL
+    #ballVelocity = BALL_VEL
 
     #Initial Direction of Ball Movement
-    ballDirX = 1
-    ballDirY = 1
+    #ballDirX = 1
+    #ballDirY = 1
 
     #Time Parameters
     clock = pygame.time.Clock()
@@ -169,41 +175,19 @@ def main():
             #Adding More Blocks in New Stage
             if stageBlocks < 15:
                 stageBlocks += 2
-    
-        #Ball Collision with Borders and Paddle
-        padCollision = pygame.Rect.colliderect(ball, paddle)
-        if ball.x + (BALL_RADIUS*2) > WIDTH or ball.x < 0:
-            ballDirX *= -1
-        if ball.y < 0:
-            ballDirY *= -1
-        if padCollision:
-            ballDirY *= -1
 
-        #Block Collision
+        ball.wall_collision()
+        ball.check_object_collision(paddle)
         for block in blocks:
-            blockCollision = pygame.Rect.colliderect(ball, block)
-            if blockCollision:
-                score += 1
-                ballDirY *= -1
-                blocks.remove(block)
+            ball.check_object_collision(block)
+            block.check_collision(ball, blocks, score)
 
-        #Ball Movement Absolute
-        ball.y += ballVelocity * ballDirY
-        ball.x += ballVelocity * ballDirX
-
-        #Controls
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT] and paddle.x - PLAYER_VEL >= 0:
-            paddle.x -= PLAYER_VEL
-        if keys[pygame.K_RIGHT] and paddle.x + paddle.width + PLAYER_VEL <= WIDTH:
-            paddle.x += PLAYER_VEL
+        ball.ball_movement()
+        controls(paddle)
 
         #Lose Game when Ball Reaches Bottom
-        if ball.y > HEIGHT:
-            lostText = FONT.render("You lost!", 1, "black")
-            WIN.blit(lostText, (WIDTH/2 - lostText.get_width()/2, HEIGHT/2 - lostText.get_width()/2))
-            pygame.display.update()
-            pygame.time.delay(4000)
+        if ball.rect.y > HEIGHT:
+            lose('Ball hit the bottom')
             break
 
         draw(paddle, elapsedTime, ball, blocks, stage, score)
