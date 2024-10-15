@@ -34,7 +34,7 @@ class Ball():
         self.velocity = BALL_VEL
         self.radius = BALL_RADIUS
 
-    #Directions
+    #Default Movement
     def ball_movement(self):
         self.rect.y += self.velocity * self.dirY
         self.rect.x += self.velocity * self.dirX
@@ -69,12 +69,31 @@ class Block():
     def __init__(self, x, y, width, height):
         self.rect = pygame.Rect(x, y, width, height)
         self.health = 1
+        self.type = 1
 
-    def check_collision(self, collider, blocks: list, score: int):
+    def check_collision(self, collider, score: int):
         if self.rect.colliderect(collider):
             score += 1
+            self.health -= 1
+
+class SturdyBlock(Block):
+    def __init__(self, x, y, width, height):
+        super().__init__(x, y, width, height)
+        self.health = 2
+        self.type = 2
+
+class TimedBlock(Block):
+    def __init__(self, x, y, width, height):
+        super().__init__(x, y, width, height)
+        self.health = 1
+        self.type = 3
+        self.timer = 8
+    
+    def time_block_timer(self, blocks: list):
+        if self.timer > 0:
+            self.time -= 1
+        else:
             blocks.remove(self)
-        
 
 #Draw on Display
 def draw(player: Paddle, elapsedTime, ball: Ball, blocks: list, stage: int, score: int):
@@ -94,16 +113,19 @@ def draw(player: Paddle, elapsedTime, ball: Ball, blocks: list, stage: int, scor
     pygame.draw.rect(WIN, "red", ball.rect)
 
     for block in blocks:
-        pygame.draw.rect(WIN, "brown", block)
+        if block.type == 1:
+            pygame.draw.rect(WIN, "brown", block)
+        if block.type == 2:
+            pygame.draw.rect(WIN, "yellow", block)
 
     pygame.display.update()
 
 def controls(paddle: Paddle):
     keys = pygame.key.get_pressed()
     if keys[pygame.K_LEFT] and paddle.rect.x - paddle.velocity >= 0:
-        paddle.rect.x -= paddle.velocity
+        paddle.move_left()
     if keys[pygame.K_RIGHT] and paddle.rect.x + paddle.rect.width + paddle.velocity <= WIDTH:
-        paddle.rect.x += paddle.velocity
+        paddle.move_right()
 
 def lose(msg):
     lostText = FONT.render("You lost! Due to: \n" + msg, 1, "black")
@@ -118,11 +140,6 @@ def main():
     #Create Player
     paddle = Paddle(200, HEIGHT - PLAYER_HEIGHT, PLAYER_WIDTH, PLAYER_HEIGHT)
     ball = Ball(0, 0, BALL_RADIUS*2, BALL_RADIUS*2)
-    #ballVelocity = BALL_VEL
-
-    #Initial Direction of Ball Movement
-    #ballDirX = 1
-    #ballDirY = 1
 
     #Time Parameters
     clock = pygame.time.Clock()
@@ -165,7 +182,14 @@ def main():
             for _ in range(stageBlocks - len(blocks)):
                 blockX = random.randint(5, int(WIDTH - BLOCK_SIZE - 5))
                 blockY = random.randint(5, int(3*HEIGHT/5))
-                block = Block(blockX, blockY, BLOCK_SIZE, BLOCK_SIZE)
+                if stage < 3:
+                    block = Block(blockX, blockY, BLOCK_SIZE, BLOCK_SIZE)
+                else:
+                    chances = random.randint(1, 10)
+                    if chances < 7:
+                        block = Block(blockX, blockY, BLOCK_SIZE, BLOCK_SIZE)
+                    elif chances >= 7:
+                        block = SturdyBlock(blockX, blockY, BLOCK_SIZE, BLOCK_SIZE)
                 blocks.append(block)
         
         #Adding a New Stage
@@ -180,7 +204,9 @@ def main():
         ball.check_object_collision(paddle)
         for block in blocks:
             ball.check_object_collision(block)
-            block.check_collision(ball, blocks, score)
+            block.check_collision(ball, score)
+            if block.health <= 0:
+                blocks.remove(block)
 
         ball.ball_movement()
         controls(paddle)
