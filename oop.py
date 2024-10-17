@@ -25,6 +25,8 @@ BALL_VEL = 5
 BLOCK_SIZE = 25
 MAX_BLOCKS = 10
 
+
+
 class Ball():
     def __init__(self, x, y, width, height):
         self.rect = pygame.Rect(x, y, width, height) #Associate a Rect object with Ball
@@ -91,9 +93,13 @@ class TimedBlock(Block):
     
     def time_block_timer(self, blocks: list):
         if self.timer > 0:
-            self.time -= 1
+            self.timer -= 1200
         else:
             blocks.remove(self)
+
+    def check_collision(self, collider, score):
+        if self.rect.colliderect(collider):
+            score += 1
 
 #Draw on Display
 def draw(player: Paddle, elapsedTime, ball: Ball, blocks: list, stage: int, score: int):
@@ -117,6 +123,8 @@ def draw(player: Paddle, elapsedTime, ball: Ball, blocks: list, stage: int, scor
             pygame.draw.rect(WIN, "brown", block)
         if block.type == 2:
             pygame.draw.rect(WIN, "yellow", block)
+        if block.type == 3:
+            pygame.draw.rect(WIN, "green", block)
 
     pygame.display.update()
 
@@ -128,7 +136,7 @@ def controls(paddle: Paddle):
         paddle.move_right()
 
 def lose(msg):
-    lostText = FONT.render("You lost! Due to: \n" + msg, 1, "black")
+    lostText = FONT.render("You lost! Due to: " + msg, 1, "black")
     WIN.blit(lostText, (WIDTH/2 - lostText.get_width()/2, HEIGHT/2 - lostText.get_width()/2))
     pygame.display.update()
     pygame.time.delay(4000)
@@ -182,16 +190,24 @@ def main():
             for _ in range(stageBlocks - len(blocks)):
                 blockX = random.randint(5, int(WIDTH - BLOCK_SIZE - 5))
                 blockY = random.randint(5, int(3*HEIGHT/5))
-                if stage < 3:
+                if stage <= 3:
                     block = Block(blockX, blockY, BLOCK_SIZE, BLOCK_SIZE)
-                else:
-                    chances = random.randint(1, 10)
-                    if chances < 7:
+                elif stage <= 4:
+                    chances = random.randint(1, 100)
+                    if chances < 75:
                         block = Block(blockX, blockY, BLOCK_SIZE, BLOCK_SIZE)
-                    elif chances >= 7:
+                    elif chances >= 25:
                         block = SturdyBlock(blockX, blockY, BLOCK_SIZE, BLOCK_SIZE)
+                elif stage >= 5:
+                    chances = random.randint(1, 100)
+                    if chances < 60:
+                        block = Block(blockX, blockY, BLOCK_SIZE, BLOCK_SIZE)
+                    elif chances <= 85:
+                        block = SturdyBlock(blockX, blockY, BLOCK_SIZE, BLOCK_SIZE)
+                    elif chances >= 85:
+                        block = TimedBlock(blockX, blockY, BLOCK_SIZE, BLOCK_SIZE)
                 blocks.append(block)
-        
+
         #Adding a New Stage
         if currentTime - lastStageTime >= stageIncrementTime * stage:
             stage += 1
@@ -203,6 +219,8 @@ def main():
         ball.wall_collision()
         ball.check_object_collision(paddle)
         for block in blocks:
+            if block.type == 3:
+                block.time_block_timer(blocks)
             ball.check_object_collision(block)
             block.check_collision(ball, score)
             if block.health <= 0:
