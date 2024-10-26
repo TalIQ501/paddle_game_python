@@ -9,7 +9,7 @@ WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Paddle Ball Game")
 
 #Main Font
-FONT = pygame.font.SysFont("comicsansms", 20) 
+FONT = pygame.font.SysFont("comicsansms", 20)
 
 #Player Parameters
 PLAYER_WIDTH = 100
@@ -70,6 +70,7 @@ class Block():
         self.rect = pygame.Rect(x, y, width, height)
         self.health = 1
         self.type = 1
+        self.hitscore = 1
 
     def check_collision(self, collider, score: int):
         if self.rect.colliderect(collider):
@@ -185,16 +186,18 @@ def main():
         #Add Blocks
         if len(blocks) < stageBlocks:
             #StageBlock is the number of blocks in a stage, Length is total blocks in present
+            #Range only gives difference of max blocks per stage and the blocks present
             for _ in range(stageBlocks - len(blocks)):
                 blockX = random.randint(5, int(WIDTH - BLOCK_SIZE - 5))
                 blockY = random.randint(5, int(3*HEIGHT/5))
+                #Adding Blocks per stage
                 if stage <= 3:
                     block = Block(blockX, blockY, BLOCK_SIZE, BLOCK_SIZE)
                 elif stage <= 4:
-                    chances = random.randint(1, 100)
+                    chances = random.randint(1, 100)    #Percentage Chance of block type 
                     if chances < 75:
                         block = Block(blockX, blockY, BLOCK_SIZE, BLOCK_SIZE)
-                    elif chances >= 25:
+                    elif chances >= 75:
                         block = SturdyBlock(blockX, blockY, BLOCK_SIZE, BLOCK_SIZE)
                 elif stage >= 5:
                     chances = random.randint(1, 100)
@@ -205,7 +208,7 @@ def main():
                     elif chances >= 85:
                         block = TimedBlock(blockX, blockY, BLOCK_SIZE, BLOCK_SIZE)
                 blocks.append(block)
-
+                
         #Adding a New Stage
         if currentTime - lastStageTime >= stageIncrementTime * stage:
             stage += 1
