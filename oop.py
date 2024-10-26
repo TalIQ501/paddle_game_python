@@ -25,7 +25,24 @@ BALL_VEL = 5
 BLOCK_SIZE = 25
 MAX_BLOCKS = 10
 
+class GameManager:
+    _instance = None
 
+    def __new__(cls):
+        # Singleton pattern to ensure only one GameManager instance exists
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance.__initialized = False  # Prevent reinitializing
+        return cls._instance
+
+    def __init__(self):
+        if not self.__initialized:
+            self.score = 0
+            self.level = 1
+            self.__initialized
+
+    def updateScore(self, pts):
+        self.score += pts
 
 class Ball():
     def __init__(self, x, y, width, height):
@@ -53,11 +70,11 @@ class Ball():
         if self.rect.y < 0:
             self.dirY *= -1
 
-
 class Paddle():
     def __init__(self, x, y, width, height):
         self.rect = pygame.Rect(x, y, width, height)
         self.velocity = PLAYER_VEL
+        
 
     # Move the paddle left
     def move_left(self):
@@ -70,12 +87,14 @@ class Paddle():
 class Block():
     def __init__(self, x, y, width, height):
         self.rect = pygame.Rect(x, y, width, height)
-        self.health = 1
-        self.type = 1
+        self.health = 1 #Number of hits to destroy
+        self.type = 1   #Type of Block - Generic Block
+        self.hitscore = 1
 
-    def check_collision(self, collider, score: int):
+    def check_collision(self, collider):
         if self.rect.colliderect(collider):
-            score += 1
+            game_manager = GameManager()
+            game_manager.updateScore(self.hitscore)
             self.health -= 1
 
 class SturdyBlock(Block):
@@ -87,22 +106,24 @@ class SturdyBlock(Block):
 class TimedBlock(Block):
     def __init__(self, x, y, width, height):
         super().__init__(x, y, width, height)
-        self.health = 1
         self.type = 3
-        self.timer = 8
+        self.timer = 12000
     
+    #Timer Logic
     def time_block_timer(self, blocks: list):
         if self.timer > 0:
-            self.timer -= 1200
+            self.timer -= 1
         else:
             blocks.remove(self)
 
-    def check_collision(self, collider, score):
+    def check_collision(self, collider):
         if self.rect.colliderect(collider):
-            score += 1
+            game_manager = GameManager()
+            game_manager.updateScore(self.hitscore)
 
 #Draw on Display
-def draw(player: Paddle, elapsedTime, ball: Ball, blocks: list, stage: int, score: int):
+def draw(player: Paddle, elapsedTime, ball: Ball, blocks: list, stage: int):
+    game_manager = GameManager()
     WIN.fill("sky blue")
 
     timeText = FONT.render(f"Time: {round(elapsedTime)}s", 1, "black")
@@ -111,7 +132,7 @@ def draw(player: Paddle, elapsedTime, ball: Ball, blocks: list, stage: int, scor
     stageText = FONT.render(f"Stage: {stage}", 1, "black")
     WIN.blit(stageText, (WIDTH - stageText.get_width() - 10, 10))
 
-    scoreText = FONT.render(f"Score: {score}", 1, "black")
+    scoreText = FONT.render(f"Score: {game_manager.score}", 1, "black")
     WIN.blit(scoreText, (WIDTH - scoreText.get_width() - 10, stageText.get_height() + 10))
 
     pygame.draw.rect(WIN, "blue", player.rect)
@@ -128,7 +149,7 @@ def draw(player: Paddle, elapsedTime, ball: Ball, blocks: list, stage: int, scor
 
     pygame.display.update()
 
-def controls(paddle: Paddle):
+def controls(paddle):
     keys = pygame.key.get_pressed()
     if keys[pygame.K_LEFT] and paddle.rect.x - paddle.velocity >= 0:
         paddle.move_left()
@@ -163,9 +184,6 @@ def main():
     blocks = []
     stageBlocks = 0
 
-    #Init Score
-    score = 0
-
     #Main Loop
     while run:
         #For Framerate set to 60
@@ -190,13 +208,15 @@ def main():
             for _ in range(stageBlocks - len(blocks)):
                 blockX = random.randint(5, int(WIDTH - BLOCK_SIZE - 5))
                 blockY = random.randint(5, int(3*HEIGHT/5))
+
+                #Adding Blocks per stage
                 if stage <= 3:
                     block = Block(blockX, blockY, BLOCK_SIZE, BLOCK_SIZE)
                 elif stage <= 4:
                     chances = random.randint(1, 100)
-                    if chances < 75:
+                    if chances < 75:    #Percentage Chance of block type 
                         block = Block(blockX, blockY, BLOCK_SIZE, BLOCK_SIZE)
-                    elif chances >= 25:
+                    elif chances >= 75:
                         block = SturdyBlock(blockX, blockY, BLOCK_SIZE, BLOCK_SIZE)
                 elif stage >= 5:
                     chances = random.randint(1, 100)
@@ -222,7 +242,7 @@ def main():
             if block.type == 3:
                 block.time_block_timer(blocks)
             ball.check_object_collision(block)
-            block.check_collision(ball, score)
+            block.check_collision(ball)
             if block.health <= 0:
                 blocks.remove(block)
 
@@ -234,7 +254,7 @@ def main():
             lose('Ball hit the bottom')
             break
 
-        draw(paddle, elapsedTime, ball, blocks, stage, score)
+        draw(paddle, elapsedTime, ball, blocks, stage)
 
     pygame.quit()
 
