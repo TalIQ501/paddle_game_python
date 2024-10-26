@@ -25,8 +25,6 @@ BALL_VEL = 5
 BLOCK_SIZE = 25
 MAX_BLOCKS = 10
 
-
-
 class Ball():
     def __init__(self, x, y, width, height):
         self.rect = pygame.Rect(x, y, width, height) #Associate a Rect object with Ball
@@ -89,11 +87,11 @@ class TimedBlock(Block):
         super().__init__(x, y, width, height)
         self.health = 1
         self.type = 3
-        self.timer = 8
+        self.timer = 12000
     
     def time_block_timer(self, blocks: list):
         if self.timer > 0:
-            self.timer -= 1200
+            self.timer -= 1
         else:
             blocks.remove(self)
 
