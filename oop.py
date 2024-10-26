@@ -120,7 +120,7 @@ def draw(player: Paddle, elapsedTime, ball: Ball, blocks: list, stage: int, scor
     for block in blocks:
         if block.type == 1:
             pygame.draw.rect(WIN, "brown", block)
-        if block.type == 2:
+        elif block.type == 2:
             pygame.draw.rect(WIN, "yellow", block)
         if block.type == 3:
             pygame.draw.rect(WIN, "green", block)
