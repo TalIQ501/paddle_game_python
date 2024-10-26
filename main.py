@@ -1,6 +1,8 @@
 import pygame
 import time
 import random
+
+#Initialise Font
 pygame.font.init()
 
 #Set Game Display
